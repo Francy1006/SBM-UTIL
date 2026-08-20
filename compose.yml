@@ -1,0 +1,12 @@
+services:
+  sbm-util-dev:
+    image: sbm-util:dev
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sbm-util-dev
+    env_file:
+      - .env.dev
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
