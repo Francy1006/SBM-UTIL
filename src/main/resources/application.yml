@@ -24,3 +24,10 @@ management:
 sbm:
   security:
     service-token: ${SBM_SERVICE_TOKEN}
+  notion:
+    api-token: ${NOTION_API_TOKEN:}
+    api-version: ${NOTION_API_VERSION:2025-09-03}
+    root-page-id: ${NOTION_ROOT_PAGE_ID:}
+    documentation-root: ./Documentation
+    connect-timeout: 10s
+    request-timeout: 30s
