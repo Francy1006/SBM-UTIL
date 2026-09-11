@@ -8,5 +8,7 @@ services:
     env_file:
       - .env.dev
     ports:
-      - "8080:8080"
+      - "8002:8080"
+    volumes:
+      - ../../context/documentation/pages:/app/Documentation/sbm-suite
     restart: unless-stopped
