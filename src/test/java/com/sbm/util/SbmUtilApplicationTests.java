@@ -8,5 +8,6 @@ class SbmUtilApplicationTests {
 
     @Test
     void contextLoads() {
+        // Verifies that the Spring Boot ApplicationContext loads successfully without exceptions.
     }
 }

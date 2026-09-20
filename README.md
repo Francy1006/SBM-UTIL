@@ -372,15 +372,66 @@ Expected healthy state:
 
 ## Testing
 
-Tests execute inside the Maven container/build environment.
+QA uses Docker as the official runtime. Java and Maven are not required on the host.
 
-Host Java or Maven installations must not be required.
-
-The baseline Spring context test is located at:
+Available QA scripts:
 
 ```text
-src/test/java/com/sbm/util/SbmUtilApplicationTests.java
+scripts/coverage.sh
+scripts/sonar-scan.sh
+scripts/qa-check.sh
 ```
+
+Grant execution permission when required:
+
+```bash
+chmod +x scripts/coverage.sh
+chmod +x scripts/sonar-scan.sh
+chmod +x scripts/qa-check.sh
+```
+
+Generate tests and JaCoCo coverage:
+
+```bash
+./scripts/coverage.sh
+```
+
+Coverage artifact:
+
+```text
+target/site/jacoco/jacoco.xml
+```
+
+Run SonarQube analysis after coverage has been generated:
+
+```bash
+./scripts/sonar-scan.sh
+```
+
+Required local SonarQube configuration in `.env.dev`:
+
+```text
+SONAR_HOST_URL=http://host.docker.internal:9000
+SONAR_API_URL=http://localhost:9000
+SONAR_TOKEN=<project-analysis-token>
+```
+
+Run the complete canonical QA flow:
+
+```bash
+./scripts/qa-check.sh
+```
+
+Execution order:
+
+```text
+Maven tests + JaCoCo
+→ SonarScanner
+→ SonarQube server-side Quality Gate
+→ context/qa-results.md
+```
+
+The workflow fails if tests, coverage generation, SonarScanner or the server-side Quality Gate fail. QA evidence is persisted in `context/qa-results.md`.
 
 ## Environment configuration
 
