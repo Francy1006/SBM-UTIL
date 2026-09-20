@@ -84,8 +84,9 @@ class NotionHardeningTests {
     void httpErrorsPreserveStatusAndOperationWithoutLeakingSecrets(int status) {
         var builder = RestClient.builder().baseUrl("http://localhost").defaultHeader("Authorization", "Bearer TOP-SECRET");
         var server = MockRestServiceServer.bindTo(builder).build();
-        var client = new NotionClient(builder.build());
-        server.expect(requestTo("http://localhost/pages/page"))
+        var client = new NotionClient(builder.build(), millis -> {});
+        server.expect(org.springframework.test.web.client.ExpectedCount.times(
+                        status == 429 || status == 500 || status == 503 ? 3 : 1), requestTo("http://localhost/pages/page"))
                 .andRespond(withStatus(HttpStatusCode.valueOf(status)).contentType(MediaType.APPLICATION_JSON)
                         .body("{\"code\":\"validation_error\",\"message\":\"Authorization: TOP-SECRET X-SBM-Service-Token: OTHER-SECRET\"}"));
         var error = catchThrowableOfType(NotionClientException.class, () -> client.retrievePage("page"));
