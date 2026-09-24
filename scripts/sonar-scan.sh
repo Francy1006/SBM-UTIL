@@ -3,6 +3,9 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+SUITE_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
+source "${SUITE_ROOT}/context/scripts/sonar-scanner-common.sh"
+
 ENV_FILE="${ROOT}/.env.dev"
 REPORT_TASK="${ROOT}/report-task.txt"
 COVERAGE_XML="${ROOT}/target/site/jacoco/jacoco.xml"
@@ -31,20 +34,42 @@ set +a
 : "${SONAR_TOKEN:?ERROR: SONAR_TOKEN no configurado}"
 SONAR_API_URL="${SONAR_API_URL:-${SONAR_HOST_URL}}"
 
+SONAR_ARCH="$(sbm_sonar_detect_arch)"
+SONAR_SCANNER_PLATFORM="$(sbm_sonar_platform)"
+SONAR_CACHE_DIR="$(sbm_sonar_cache_dir "${ROOT}" "${SONAR_ARCH}")"
+SONAR_CONTAINER_NAME="sbm-sonar-${SONAR_ARCH}-$$"
+
 cd "${ROOT}"
 rm -rf .scannerwork
 rm -f "${REPORT_TASK}"
-mkdir -p .sonar/cache
+mkdir -p "${SONAR_CACHE_DIR}"
 
-docker run --rm \
-  --network sbm-network \
-  -e SONAR_HOST_URL="${SONAR_HOST_URL}" \
-  -e SONAR_TOKEN="${SONAR_TOKEN}" \
-  -v "${ROOT}/.sonar/cache:/opt/sonar-scanner/.sonar/cache" \
-  -v "${ROOT}:/usr/src/app" \
-  -w /usr/src/app \
-  sonarsource/sonar-scanner-cli:latest \
-  -Dsonar.scanner.metadataFilePath=/usr/src/app/report-task.txt
+docker_args=(
+  docker
+  run
+  --rm
+  --name
+  "${SONAR_CONTAINER_NAME}"
+  --platform
+  "${SONAR_SCANNER_PLATFORM}"
+  --network
+  "sbm-network"
+  -e
+  "SONAR_HOST_URL=${SONAR_HOST_URL}"
+  -e
+  "SONAR_TOKEN=${SONAR_TOKEN}"
+  -v
+  "${SONAR_CACHE_DIR}:/opt/sonar-scanner/.sonar/cache"
+  -v
+  "${ROOT}:/usr/src/app"
+  -w
+  "/usr/src/app"
+  "$(sbm_sonar_image)"
+  "-Dsonar.scanner.metadataFilePath=/usr/src/app/report-task.txt"
+)
+
+sbm_sonar_ensure_image
+sbm_sonar_run "${docker_args[@]}"
 
 [[ -f "${REPORT_TASK}" ]] || {
   echo "ERROR: SonarScanner no generó report-task.txt" >&2
